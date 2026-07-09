@@ -29,18 +29,41 @@ The app should support:
    - Ad event tracking
    - Google IMA / Google Ad Manager integration
 
+4. Platform support
+   - Android Mobile
+   - Android Tablet
+   - Android TV / Google TV
+   - Amazon Fire TV / Fire TV Stick
+
 ## Recommended stack
 
 ```text
 Android App: Kotlin + Jetpack Compose
-Architecture: MVVM + Repository Pattern
+Architecture: Clean Architecture (Route + Screen + ViewModel + UiState + Action)
+Navigation: Single NavHost with nested graphs
 Player: Android Media3 ExoPlayer
 Ads: Google IMA SDK / Google Ad Manager
 Auth: Supabase Auth
-Database: Supabase PostgreSQL
-Video Streaming: Bunny Stream / Mux
-Backend: Supabase Edge Functions / Ktor / Spring Boot
+Database: Supabase PostgreSQL + RLS
+Video Streaming: Bunny Stream / Mux / HLS
+Backend: Supabase Edge Functions first / Node.js Express only if needed
 ```
+
+## Architecture rules
+
+Tio-Flix should strictly follow these rules:
+
+```text
+Single NavHost
+Nested navigation graphs per feature
+Dumb Compose Screens
+Route owns ViewModel collection and navigation callbacks
+ViewModel exposes UiState and accepts Actions
+Domain layer owns use cases and repository contracts
+Data layer owns repository implementations and data sources
+```
+
+Do not place business logic inside Composables. Screens should render state and emit actions only.
 
 ## Documentation
 
@@ -66,6 +89,7 @@ Backend: Supabase Edge Functions / Ktor / Spring Boot
 - [Ads Architecture](docs/07-ads/ADS_ARCHITECTURE.md)
 - [API Specification](docs/08-api/API_SPEC.md)
 - [UI Guidelines](docs/09-ui/UI_GUIDELINES.md)
+- [Platform Support](docs/13-platforms/PLATFORM_SUPPORT.md)
 
 ## Legal note
 
