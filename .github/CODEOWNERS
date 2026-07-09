@@ -1,0 +1,20 @@
+# Repository owners have not been assigned yet.
+# Add GitHub users or teams before enabling required CODEOWNERS review.
+#
+# Suggested future ownership shape:
+#
+# *                                  @im-tnyx/tio-flix-maintainers
+# /app/                              @im-tnyx/android
+# /core/                             @im-tnyx/android-architecture
+# /features/auth/                    @im-tnyx/auth
+# /features/home/                    @im-tnyx/ott-home
+# /features/search/                  @im-tnyx/search
+# /features/movie-detail/            @im-tnyx/movie-detail
+# /features/player/                  @im-tnyx/player
+# /features/ads/                     @im-tnyx/ads
+# /features/profile/                 @im-tnyx/profile
+# /tv/                               @im-tnyx/android-tv
+# /firetv/                           @im-tnyx/fire-tv
+# /docs/                             @im-tnyx/architecture
+# /.github/                          @im-tnyx/maintainers
+# /.ai/                              @im-tnyx/maintainers
