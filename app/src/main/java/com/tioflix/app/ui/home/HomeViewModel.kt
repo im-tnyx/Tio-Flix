@@ -25,29 +25,23 @@ class HomeViewModel @Inject constructor(
     private val _effects = Channel<HomeEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    init {
-        loadCatalog()
-    }
+    init { loadCatalog() }
 
     fun onAction(action: HomeAction) {
         when (action) {
             HomeAction.RetryClicked -> loadCatalog()
             HomeAction.LogoutClicked -> logout()
+            is HomeAction.ContentClicked -> Unit
         }
     }
 
     private fun loadCatalog() = viewModelScope.launch {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         catalogRepository.getHomeCatalog()
-            .onSuccess { catalog ->
-                _uiState.update { it.copy(isLoading = false, catalog = catalog) }
-            }
+            .onSuccess { catalog -> _uiState.update { it.copy(isLoading = false, catalog = catalog) } }
             .onFailure { error ->
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Unable to load catalog."
-                    )
+                    it.copy(isLoading = false, errorMessage = error.message ?: "Unable to load catalog.")
                 }
             }
     }
