@@ -13,3 +13,4 @@
 .env
 .env.*
 secrets.properties
+backup/
