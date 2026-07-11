@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tioflix.app.domain.usecase.SignInWithEmailUseCase
 import com.tioflix.app.domain.usecase.SignInWithGoogleUseCase
+import com.tioflix.app.domain.usecase.SyncCurrentProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val signInWithEmail: SignInWithEmailUseCase,
-    private val signInWithGoogle: SignInWithGoogleUseCase
+    private val signInWithGoogle: SignInWithGoogleUseCase,
+    private val syncCurrentProfile: SyncCurrentProfileUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -46,7 +48,7 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             signInWithEmail(state.email, state.password)
-                .onSuccess { _effects.send(LoginEffect.NavigateHome) }
+                .onSuccess { completeLogin() }
                 .onFailure { error -> _uiState.update { it.copy(errorMessage = error.message ?: "Unable to sign in.") } }
             _uiState.update { it.copy(isLoading = false) }
         }
@@ -56,9 +58,19 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             signInWithGoogle(idToken, nonce)
-                .onSuccess { _effects.send(LoginEffect.NavigateHome) }
+                .onSuccess { completeLogin() }
                 .onFailure { error -> _uiState.update { it.copy(errorMessage = error.message ?: "Google sign-in failed.") } }
             _uiState.update { it.copy(isLoading = false) }
         }
+    }
+
+    private suspend fun completeLogin() {
+        syncCurrentProfile()
+            .onSuccess { _effects.send(LoginEffect.NavigateHome) }
+            .onFailure { error ->
+                _uiState.update {
+                    it.copy(errorMessage = error.message ?: "Signed in, but profile sync failed.")
+                }
+            }
     }
 }
