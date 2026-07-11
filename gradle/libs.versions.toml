@@ -17,6 +17,8 @@ supabase = "3.0.0"
 ktor = "3.0.0"
 media3 = "1.5.1"
 playIntegrity = "1.4.0"
+credentials = "1.6.0"
+googleId = "1.1.1"
 junit = "4.13.2"
 androidxJunit = "1.2.1"
 espresso = "3.6.1"
@@ -52,6 +54,9 @@ media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls
 media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 media3-exoplayer-ima = { group = "androidx.media3", name = "media3-exoplayer-ima", version.ref = "media3" }
 play-integrity = { group = "com.google.android.play", name = "integrity", version.ref = "playIntegrity" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
