@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,14 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use(::load)
+}
+
+fun quotedProperty(name: String): String =
+    "\"${localProperties.getProperty(name, "").replace("\"", "\\\"")}\""
 
 android {
     namespace = "com.tioflix.app"
@@ -18,8 +28,12 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        buildConfigField("String", "SUPABASE_URL", "\"\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"\"")
+        buildConfigField("String", "SUPABASE_URL", quotedProperty("SUPABASE_URL"))
+        buildConfigField(
+            "String",
+            "SUPABASE_PUBLISHABLE_KEY",
+            quotedProperty("SUPABASE_PUBLISHABLE_KEY")
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
