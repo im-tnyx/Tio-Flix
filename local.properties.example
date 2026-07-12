@@ -2,3 +2,4 @@
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
 GOOGLE_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+PLAYBACK_API_BASE_URL=https://api.example.com
