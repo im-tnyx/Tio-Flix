@@ -43,10 +43,23 @@ to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
+create or replace function public.set_watch_history_timestamps()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+    new.updated_at = timezone('utc', now());
+    new.last_watched_at = timezone('utc', now());
+    return new;
+end;
+$$;
+
 drop trigger if exists watch_history_set_updated_at on public.watch_history;
 create trigger watch_history_set_updated_at
 before update on public.watch_history
-for each row execute function public.set_updated_at();
+for each row execute function public.set_watch_history_timestamps();
 
 grant select, insert, update on public.watch_history to authenticated;
 
