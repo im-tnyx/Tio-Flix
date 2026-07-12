@@ -9,13 +9,14 @@ import com.tioflix.app.domain.repository.WatchHistoryRepository
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Serializable
-private data class WatchProgressDto(
+private data class WatchProgressRowDto(
     @SerialName("user_id") val userId: String,
     @SerialName("content_id") val contentId: String,
     @SerialName("episode_id") val episodeId: String? = null,
@@ -24,6 +25,16 @@ private data class WatchProgressDto(
     val completed: Boolean,
     @SerialName("last_watched_at") val lastWatchedAt: String? = null,
     val content: ContentDto? = null
+)
+
+@Serializable
+private data class WatchProgressUpsertDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("content_id") val contentId: String,
+    @SerialName("episode_id") val episodeId: String? = null,
+    @SerialName("position_ms") val positionMs: Long,
+    @SerialName("duration_ms") val durationMs: Long,
+    val completed: Boolean
 )
 
 @Singleton
@@ -40,20 +51,19 @@ class SupabaseWatchHistoryRepository @Inject constructor(
                 eq("content_id", contentId)
                 limit(1)
             }
-            .decodeList<WatchProgressDto>()
+            .decodeList<WatchProgressRowDto>()
             .firstOrNull()
             ?.toDomain()
     }
 
     override suspend fun saveProgress(progress: WatchProgress): Result<Unit> = runCatching {
-        val dto = WatchProgressDto(
+        val dto = WatchProgressUpsertDto(
             userId = currentUserId(),
             contentId = progress.contentId,
             episodeId = progress.episodeId,
             positionMs = progress.positionMs.coerceAtLeast(0L),
             durationMs = progress.durationMs.coerceAtLeast(0L),
-            completed = progress.completed,
-            lastWatchedAt = null
+            completed = progress.completed
         )
         postgrest["watch_history"].insert(
             value = dto,
@@ -95,10 +105,10 @@ class SupabaseWatchHistoryRepository @Inject constructor(
                 eq("user_id", userId)
                 eq("completed", false)
                 gt("position_ms", 0)
-                order("last_watched_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                order("last_watched_at", Order.DESCENDING)
                 limit(limit.coerceIn(1, 50).toLong())
             }
-            .decodeList<WatchProgressDto>()
+            .decodeList<WatchProgressRowDto>()
             .mapNotNull { row ->
                 val content = row.content ?: return@mapNotNull null
                 ContinueWatchingItem(
@@ -116,7 +126,7 @@ class SupabaseWatchHistoryRepository @Inject constructor(
     private fun currentUserId(): String = auth.currentUserOrNull()?.id
         ?: error("No authenticated user is available.")
 
-    private fun WatchProgressDto.toDomain() = WatchProgress(
+    private fun WatchProgressRowDto.toDomain() = WatchProgress(
         contentId = contentId,
         episodeId = episodeId,
         positionMs = positionMs,
