@@ -68,6 +68,32 @@ class SupabaseCatalogRepository @Inject constructor(
         HomeCatalog(featured = featured, categories = categories)
     }
 
+    override suspend fun getContent(contentId: String): Result<ContentItem> = runCatching {
+        postgrest["content"]
+            .select(
+                columns = Columns.raw(
+                    """
+                    id,
+                    content_type,
+                    title,
+                    description,
+                    poster_url,
+                    backdrop_url,
+                    release_year,
+                    duration_minutes,
+                    total_seasons,
+                    maturity_rating,
+                    language,
+                    is_featured
+                    """.trimIndent()
+                )
+            ) {
+                eq("id", contentId)
+            }
+            .decodeSingle<ContentDto>()
+            .toDomain()
+    }
+
     override suspend fun getSeriesSeasons(contentId: String): Result<List<SeriesSeason>> = runCatching {
         postgrest["series_seasons"]
             .select(
