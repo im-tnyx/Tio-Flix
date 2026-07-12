@@ -3,6 +3,7 @@ package com.tioflix.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tioflix.app.domain.repository.CatalogRepository
+import com.tioflix.app.domain.repository.WatchHistoryRepository
 import com.tioflix.app.domain.usecase.SignOutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val signOut: SignOutUseCase,
-    private val catalogRepository: CatalogRepository
+    private val catalogRepository: CatalogRepository,
+    private val watchHistoryRepository: WatchHistoryRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -39,8 +41,19 @@ class HomeViewModel @Inject constructor(
 
     private fun loadCatalog() = viewModelScope.launch {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        catalogRepository.getHomeCatalog()
-            .onSuccess { catalog -> _uiState.update { it.copy(isLoading = false, catalog = catalog) } }
+        val catalogResult = catalogRepository.getHomeCatalog()
+        val continueWatching = watchHistoryRepository.getContinueWatching().getOrDefault(emptyList())
+
+        catalogResult
+            .onSuccess { catalog ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        catalog = catalog,
+                        continueWatching = continueWatching
+                    )
+                }
+            }
             .onFailure { error ->
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = error.message ?: "Unable to load catalog.")
