@@ -36,6 +36,9 @@ class HomeViewModel @Inject constructor(
         when (action) {
             HomeAction.RetryClicked -> loadCatalog()
             HomeAction.LogoutClicked -> logout()
+            HomeAction.SearchClicked -> viewModelScope.launch {
+                _effects.send(HomeEffect.NavigateSearch)
+            }
             is HomeAction.ContentClicked -> viewModelScope.launch {
                 _effects.send(HomeEffect.NavigateContentDetail(action.contentId))
             }
@@ -60,9 +63,7 @@ class HomeViewModel @Inject constructor(
                             items = favorites
                         )
                     ) + catalog.categories
-                } else {
-                    catalog.categories
-                }
+                } else catalog.categories
 
                 _uiState.update {
                     it.copy(
