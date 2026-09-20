@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AssistChip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -36,7 +37,8 @@ import javax.inject.Inject
 data class SettingsUiState(
     val displayName: String = "Profile",
     val email: String = "Not available",
-    val provider: String = "email"
+    val provider: String = "email",
+    val membershipLabel: String = "Standard profile"
 )
 
 sealed interface SettingsAction {
@@ -84,7 +86,12 @@ class SettingsViewModel @Inject constructor(
             it.copy(
                 displayName = displayName,
                 email = user?.email ?: "Not available",
-                provider = provider
+                provider = provider,
+                membershipLabel = if (provider.equals("google", ignoreCase = true)) {
+                    "Google profile"
+                } else {
+                    "Email profile"
+                }
             )
         }
     }
@@ -148,6 +155,11 @@ fun SettingsScreen(
                 ) {
                     Text(state.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(state.email, style = MaterialTheme.typography.bodyLarge)
+                    AssistChip(
+                        onClick = {},
+                        enabled = false,
+                        label = { Text(state.membershipLabel) }
+                    )
                     Text(
                         "Signed in with ${state.provider}",
                         style = MaterialTheme.typography.bodyMedium
@@ -162,8 +174,34 @@ fun SettingsScreen(
                         .padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Playback and parental controls will live here next.", style = MaterialTheme.typography.bodyLarge)
-                    Text("For now, this tab gives users a clear account entry point instead of hiding everything behind Home.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Account", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Use this tab as the account hub instead of going back through Home.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Your verification and sign-in state are tied to the email above.", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Card(shape = RoundedCornerShape(18.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Library", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Saved titles live in the My List tab on the bottom bar.", style = MaterialTheme.typography.bodyMedium)
+                    Text("Search, discovery, and account management are now split into dedicated tabs like a streaming app.", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Card(shape = RoundedCornerShape(18.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("Next upgrades", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Playback preferences, parental controls, and notifications can be added here next without changing the bottom navigation flow.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
 

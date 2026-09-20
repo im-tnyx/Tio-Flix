@@ -39,7 +39,7 @@ import com.tioflix.app.ui.splash.SplashRoute
 
 private object Destinations {
     const val Splash = "splash"
-    const val Login = "auth/login"
+    const val Login = "auth/login?email={email}&message={message}"
     const val Signup = "auth/signup"
     const val CheckEmail = "auth/check-email?email={email}"
     const val ForgotPassword = "auth/forgot-password"
@@ -50,6 +50,8 @@ private object Destinations {
     const val ContentDetail = "content/{contentId}"
     const val Player = "player/{contentId}?episodeId={episodeId}"
 
+    fun login(email: String = "", message: String = "") =
+        "auth/login?email=${Uri.encode(email)}&message=${Uri.encode(message)}"
     fun checkEmail(email: String) = "auth/check-email?email=${Uri.encode(email)}"
     fun contentDetail(contentId: String) = "content/$contentId"
     fun player(contentId: String, episodeId: String?) =
@@ -131,7 +133,19 @@ fun TioFlixNavHost() {
                 )
             }
 
-            composable(Destinations.Login) {
+            composable(
+                route = Destinations.Login,
+                arguments = listOf(
+                    navArgument("email") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                    navArgument("message") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    }
+                )
+            ) {
                 LoginRoute(
                     onLoginSuccess = { navigateClearingAuth(Destinations.Home) },
                     onSignupClick = { navController.navigate(Destinations.Signup) },
@@ -161,7 +175,14 @@ fun TioFlixNavHost() {
             ) { backStackEntry ->
                 CheckEmailRoute(
                     email = backStackEntry.arguments?.getString("email").orEmpty(),
-                    onBackToLogin = { navigateClearingAuth(Destinations.Login) },
+                    onBackToLogin = { email ->
+                        navigateClearingAuth(
+                            Destinations.login(
+                                email = email,
+                                message = "Email verify ho gaya ho to apna password dal kar continue karein."
+                            )
+                        )
+                    },
                     onVerified = { navigateClearingAuth(Destinations.Home) }
                 )
             }
@@ -172,8 +193,6 @@ fun TioFlixNavHost() {
 
             composable(Destinations.Home) {
                 HomeRoute(
-                    onLoggedOut = { navigateClearingAuth(Destinations.Login) },
-                    onSearchClick = { navigateToBottomDestination(Destinations.Search) },
                     onContentClick = { contentId ->
                         navController.navigate(Destinations.contentDetail(contentId))
                     }

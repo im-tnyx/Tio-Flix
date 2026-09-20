@@ -130,7 +130,7 @@ class CheckEmailViewModel @Inject constructor(
 @Composable
 fun CheckEmailRoute(
     email: String,
-    onBackToLogin: () -> Unit,
+    onBackToLogin: (String) -> Unit,
     onVerified: () -> Unit,
     viewModel: CheckEmailViewModel = hiltViewModel()
 ) {
@@ -148,7 +148,7 @@ fun CheckEmailRoute(
         email = email,
         state = state.value,
         onResend = { viewModel.resend(email) },
-        onBackToLogin = onBackToLogin
+        onBackToLogin = { onBackToLogin(email) }
     )
 }
 
@@ -250,7 +250,7 @@ fun CheckEmailScreen(
                 .fillMaxWidth()
                 .padding(top = 24.dp)
         ) {
-            Text("Back to login")
+            Text("I verified, continue to sign in")
         }
     }
 }

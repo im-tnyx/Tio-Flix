@@ -1,6 +1,7 @@
 package com.tioflix.app.ui.auth.login
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.tioflix.app.domain.usecase.SignInWithEmailUseCase
 import com.tioflix.app.domain.usecase.SignInWithGoogleUseCase
@@ -17,11 +18,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val signInWithEmail: SignInWithEmailUseCase,
     private val signInWithGoogle: SignInWithGoogleUseCase,
     private val syncCurrentProfile: SyncCurrentProfileUseCase
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(LoginUiState())
+    private val initialEmail = savedStateHandle.get<String>("email").orEmpty()
+    private val initialMessage = savedStateHandle.get<String>("message").orEmpty().ifBlank { null }
+
+    private val _uiState = MutableStateFlow(
+        LoginUiState(
+            email = initialEmail,
+            infoMessage = initialMessage
+        )
+    )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     private val _effects = Channel<LoginEffect>(Channel.BUFFERED)
@@ -29,8 +39,12 @@ class LoginViewModel @Inject constructor(
 
     fun onAction(action: LoginAction) {
         when (action) {
-            is LoginAction.EmailChanged -> _uiState.update { it.copy(email = action.value, errorMessage = null) }
-            is LoginAction.PasswordChanged -> _uiState.update { it.copy(password = action.value, errorMessage = null) }
+            is LoginAction.EmailChanged -> _uiState.update {
+                it.copy(email = action.value, errorMessage = null, infoMessage = null)
+            }
+            is LoginAction.PasswordChanged -> _uiState.update {
+                it.copy(password = action.value, errorMessage = null, infoMessage = null)
+            }
             LoginAction.SubmitEmailLogin -> submitEmailLogin()
             is LoginAction.GoogleCredentialReceived -> submitGoogleLogin(action.idToken, action.nonce)
             is LoginAction.GoogleSignInFailed -> _uiState.update {
@@ -49,7 +63,9 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             signInWithEmail(state.email, state.password)
                 .onSuccess { completeLogin() }
-                .onFailure { error -> _uiState.update { it.copy(errorMessage = error.message ?: "Unable to sign in.") } }
+                .onFailure {
+                    error -> _uiState.update { it.copy(errorMessage = error.message ?: "Unable to sign in.") }
+                }
             _uiState.update { it.copy(isLoading = false) }
         }
     }

@@ -42,6 +42,14 @@ fun LoginScreen(
                 .padding(top = 24.dp)
         )
 
+        state.infoMessage?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
         OutlinedTextField(
             value = state.password,
             onValueChange = { onAction(LoginAction.PasswordChanged(it)) },

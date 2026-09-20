@@ -6,7 +6,6 @@ import com.tioflix.app.domain.model.ContentCategory
 import com.tioflix.app.domain.repository.CatalogRepository
 import com.tioflix.app.domain.repository.FavoritesRepository
 import com.tioflix.app.domain.repository.WatchHistoryRepository
-import com.tioflix.app.domain.usecase.SignOutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +18,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val signOut: SignOutUseCase,
     private val catalogRepository: CatalogRepository,
     private val watchHistoryRepository: WatchHistoryRepository,
     private val favoritesRepository: FavoritesRepository
@@ -35,10 +33,6 @@ class HomeViewModel @Inject constructor(
     fun onAction(action: HomeAction) {
         when (action) {
             HomeAction.RetryClicked -> loadCatalog()
-            HomeAction.LogoutClicked -> logout()
-            HomeAction.SearchClicked -> viewModelScope.launch {
-                _effects.send(HomeEffect.NavigateSearch)
-            }
             is HomeAction.ContentClicked -> viewModelScope.launch {
                 _effects.send(HomeEffect.NavigateContentDetail(action.contentId))
             }
@@ -78,9 +72,5 @@ class HomeViewModel @Inject constructor(
                     it.copy(isLoading = false, errorMessage = error.message ?: "Unable to load catalog.")
                 }
             }
-    }
-
-    private fun logout() = viewModelScope.launch {
-        signOut().onSuccess { _effects.send(HomeEffect.NavigateLogin) }
     }
 }
