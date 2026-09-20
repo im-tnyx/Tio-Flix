@@ -28,7 +28,10 @@ object SupabaseModule {
             supabaseUrl = AppConfig.supabaseUrl,
             supabaseKey = AppConfig.supabasePublishableKey
         ) {
-            install(Auth)
+            install(Auth) {
+                host = "auth"
+                scheme = "tioflix"
+            }
             install(Postgrest)
         }
     }

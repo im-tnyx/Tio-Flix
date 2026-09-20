@@ -13,6 +13,15 @@ class SignUpWithEmailUseCase @Inject constructor(
     }
 }
 
+class ResendSignupConfirmationUseCase @Inject constructor(
+    private val repository: AuthRepository
+) {
+    suspend operator fun invoke(email: String): Result<Unit> {
+        if (email.isBlank()) return Result.failure(IllegalArgumentException("Email is required."))
+        return repository.resendSignupConfirmation(email.trim())
+    }
+}
+
 class SendPasswordResetUseCase @Inject constructor(
     private val repository: AuthRepository
 ) {
