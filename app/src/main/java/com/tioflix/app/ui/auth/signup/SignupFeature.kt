@@ -42,7 +42,9 @@ sealed interface SignupAction {
     data object Submit : SignupAction
 }
 
-sealed interface SignupEffect { data object NavigateBack : SignupEffect }
+sealed interface SignupEffect {
+    data class NavigateToCheckEmail(val email: String) : SignupEffect
+}
 
 @HiltViewModel
 class SignupViewModel @Inject constructor(
@@ -67,8 +69,7 @@ class SignupViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, message = null) }
         signUp(state.email, state.password)
             .onSuccess {
-                _uiState.update { it.copy(message = "Account created. Check email confirmation if enabled.") }
-                _effects.send(SignupEffect.NavigateBack)
+                _effects.send(SignupEffect.NavigateToCheckEmail(state.email.trim()))
             }
             .onFailure { error -> _uiState.update { it.copy(message = error.message ?: "Signup failed.") } }
         _uiState.update { it.copy(isLoading = false) }
@@ -77,12 +78,16 @@ class SignupViewModel @Inject constructor(
 
 @Composable
 fun SignupRoute(
-    onCompleted: () -> Unit,
+    onCompleted: (String) -> Unit,
     viewModel: SignupViewModel = hiltViewModel()
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) {
-        viewModel.effects.collect { onCompleted() }
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is SignupEffect.NavigateToCheckEmail -> onCompleted(effect.email)
+            }
+        }
     }
     SignupScreen(state.value, viewModel::onAction)
 }

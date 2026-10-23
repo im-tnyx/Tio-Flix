@@ -31,8 +31,6 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
 
       - name: Create CI local properties
         run: |
@@ -43,13 +41,16 @@ jobs:
           EOF
 
       - name: Compile debug sources
-        run: gradle :app:compileDebugKotlin --stacktrace
+        run: bash ./gradlew :app:compileDebugKotlin --stacktrace
 
       - name: Run unit tests
-        run: gradle :app:testDebugUnitTest --stacktrace
+        run: bash ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Run Android lint
+        run: bash ./gradlew :app:lintDebug --stacktrace
 
       - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: bash ./gradlew :app:assembleDebug --stacktrace
 
       - name: Upload debug APK
         if: success()

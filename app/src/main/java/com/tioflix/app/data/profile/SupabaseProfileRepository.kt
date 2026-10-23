@@ -17,7 +17,10 @@ class SupabaseProfileRepository @Inject constructor(
             ?: error("No authenticated user is available for profile sync.")
 
         val metadata = user.userMetadata
-        val provider = user.appMetadata["provider"]?.toString()?.trim('"')
+        val provider = user.appMetadata
+            ?.get("provider")
+            ?.toString()
+            ?.trim('"')
             ?: user.identities?.firstOrNull()?.provider
             ?: "email"
 
@@ -31,10 +34,10 @@ class SupabaseProfileRepository @Inject constructor(
             provider = provider
         )
 
-        postgrest["profiles"].insert(
-            value = profile,
-            upsert = true,
+        postgrest["profiles"].upsert(profile) {
             onConflict = "id"
-        )
+        }
+
+        Unit
     }
 }

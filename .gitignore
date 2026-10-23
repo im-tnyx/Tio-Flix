@@ -1,5 +1,6 @@
 *.iml
 .gradle/
+.kotlin/
 /local.properties
 /.idea/
 .DS_Store
@@ -13,8 +14,8 @@
 .env
 .env.*
 secrets.properties
-<<<<<<< Updated upstream
-backup/
-=======
-backup/
->>>>>>> Stashed changes
+/backup/
+/.build-fix-backup/
+/.obsidian/
+/node_modules/
+/supabase/.temp/

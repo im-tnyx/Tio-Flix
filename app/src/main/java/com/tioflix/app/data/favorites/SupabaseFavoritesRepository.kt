@@ -34,28 +34,41 @@ class SupabaseFavoritesRepository @Inject constructor(
     override suspend fun isFavorite(contentId: String): Result<Boolean> = runCatching {
         postgrest["favorites"]
             .select {
-                eq("user_id", currentUserId())
-                eq("content_id", contentId)
+                filter {
+                    eq("user_id", currentUserId())
+                    eq("content_id", contentId)
+                }
                 limit(1)
             }
             .decodeList<FavoriteRowDto>()
             .isNotEmpty()
     }
 
-    override suspend fun setFavorite(contentId: String, isFavorite: Boolean): Result<Unit> = runCatching {
+    override suspend fun setFavorite(
+        contentId: String,
+        isFavorite: Boolean
+    ): Result<Unit> = runCatching {
         val userId = currentUserId()
+
         if (isFavorite) {
-            postgrest["favorites"].insert(
-                value = FavoriteInsertDto(userId, contentId),
-                upsert = true,
+            postgrest["favorites"].upsert(
+                FavoriteInsertDto(
+                    userId = userId,
+                    contentId = contentId
+                )
+            ) {
                 onConflict = "user_id,content_id"
-            )
+            }
         } else {
             postgrest["favorites"].delete {
-                eq("user_id", userId)
-                eq("content_id", contentId)
+                filter {
+                    eq("user_id", userId)
+                    eq("content_id", contentId)
+                }
             }
         }
+
+        Unit
     }
 
     override suspend fun getFavorites(limit: Int): Result<List<ContentItem>> = runCatching {
@@ -81,16 +94,19 @@ class SupabaseFavoritesRepository @Inject constructor(
                     """.trimIndent()
                 )
             ) {
-                eq("user_id", currentUserId())
+                filter {
+                    eq("user_id", currentUserId())
+                }
                 order("created_at", Order.DESCENDING)
                 limit(limit.coerceIn(1, 50).toLong())
             }
             .decodeList<FavoriteRowDto>()
-            .mapNotNull { it.content?.toDomain() }
+            .mapNotNull { row -> row.content?.toDomain() }
     }
 
-    private fun currentUserId(): String = auth.currentUserOrNull()?.id
-        ?: error("No authenticated user is available.")
+    private fun currentUserId(): String =
+        auth.currentUserOrNull()?.id
+            ?: error("No authenticated user is available.")
 
     private fun ContentDto.toDomain() = ContentItem(
         id = id,
