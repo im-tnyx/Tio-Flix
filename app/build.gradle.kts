@@ -68,6 +68,12 @@ android {
 }
 
 dependencies {
+    constraints {
+        implementation(libs.glide) {
+            because("IMA transitively brings Glide 4.11.0; 4.16.0 fixes NotificationTarget permission annotations.")
+        }
+    }
+
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.androidx.core.ktx)
@@ -105,6 +111,7 @@ dependencies {
     implementation(libs.googleid)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

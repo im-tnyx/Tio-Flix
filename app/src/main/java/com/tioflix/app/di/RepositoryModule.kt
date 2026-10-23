@@ -1,6 +1,8 @@
 package com.tioflix.app.di
 
 import com.tioflix.app.data.auth.SupabaseAuthRepository
+import com.tioflix.app.data.auth.SupabasePasswordRecoveryRepository
+import com.tioflix.app.domain.repository.PasswordRecoveryRepository
 import com.tioflix.app.data.catalog.SupabaseCatalogRepository
 import com.tioflix.app.data.favorites.SupabaseFavoritesRepository
 import com.tioflix.app.data.history.SupabaseWatchHistoryRepository
@@ -21,6 +23,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+    @Binds
+    @Singleton
+    abstract fun bindPasswordRecoveryRepository(
+        implementation: SupabasePasswordRecoveryRepository
+    ): PasswordRecoveryRepository
+
     @Binds
     @Singleton
     abstract fun bindAuthRepository(

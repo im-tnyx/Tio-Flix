@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="90dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#111111" android:pathData="M0,0 H320 V180 H0 Z" />
+    <path android:fillColor="#E50914" android:pathData="M28,62 H84 V118 H28 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M49,75 L49,105 L70,90 Z" />
+    <!-- Outlined TIO-FLIX lettering keeps the launcher banner independent of device fonts. -->
+    <path android:fillColor="#FFFFFF" android:pathData="M98,75 H118 V81 H111 V105 H105 V81 H98 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M124,75 H130 V105 H124 Z" />
+    <path android:fillColor="#FFFFFF" android:fillType="evenOdd"
+        android:pathData="M136,75 H156 V105 H136 Z M142,81 V99 H150 V81 Z" />
+    <path android:fillColor="#E50914" android:pathData="M162,87 H174 V93 H162 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M180,75 H200 V81 H186 V87 H198 V93 H186 V105 H180 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M206,75 H212 V99 H224 V105 H206 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M230,75 H236 V105 H230 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M242,75 H249 L254,85 L259,75 H266 L258,90 L266,105 H259 L254,95 L249,105 H242 L250,90 Z" />
+    <path android:fillColor="#E50914" android:pathData="M0,174 H320 V180 H0 Z" />
+</vector>

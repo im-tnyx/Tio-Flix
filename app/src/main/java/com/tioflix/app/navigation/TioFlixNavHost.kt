@@ -8,7 +8,12 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tioflix.app.ui.auth.reset.ResetPasswordRoute
+import com.tioflix.app.ui.auth.reset.ResetPasswordViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavType
@@ -43,6 +48,7 @@ private object Destinations {
     const val Signup = "auth/signup"
     const val CheckEmail = "auth/check-email?email={email}"
     const val ForgotPassword = "auth/forgot-password"
+    const val ResetPassword = "auth/reset-password"
     const val Home = "home"
     const val MyList = "my-list"
     const val Settings = "settings"
@@ -72,13 +78,17 @@ private val bottomDestinations = listOf(
 )
 
 @Composable
-fun TioFlixNavHost() {
+fun TioFlixNavHost(recoveryViewModel: ResetPasswordViewModel) {
     if (!AppConfig.isSupabaseConfigured) {
         ConfigurationRequiredScreen()
         return
     }
 
     val navController = rememberNavController()
+    val recoveryState by recoveryViewModel.uiState.collectAsStateWithLifecycle()
+    val initialDestination = remember {
+        if (recoveryState.isActive) Destinations.ResetPassword else Destinations.Splash
+    }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = bottomDestinations.any { it.route == currentRoute }
@@ -98,6 +108,10 @@ fun TioFlixNavHost() {
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    LaunchedEffect(recoveryState.isActive) {
+        if (recoveryState.isActive) navigateClearingAuth(Destinations.ResetPassword)
     }
 
     Scaffold(
@@ -124,12 +138,12 @@ fun TioFlixNavHost() {
         NavHost(
             modifier = Modifier.padding(innerPadding),
             navController = navController,
-            startDestination = Destinations.Splash
+            startDestination = initialDestination
         ) {
             composable(Destinations.Splash) {
                 SplashRoute(
-                    onAuthenticated = { navigateClearingAuth(Destinations.Home) },
-                    onLoggedOut = { navigateClearingAuth(Destinations.Login) }
+                    onAuthenticated = { if (!recoveryState.isActive) navigateClearingAuth(Destinations.Home) },
+                    onLoggedOut = { if (!recoveryState.isActive) navigateClearingAuth(Destinations.login()) }
                 )
             }
 
@@ -147,7 +161,7 @@ fun TioFlixNavHost() {
                 )
             ) {
                 LoginRoute(
-                    onLoginSuccess = { navigateClearingAuth(Destinations.Home) },
+                    onLoginSuccess = { if (!recoveryState.isActive) navigateClearingAuth(Destinations.Home) },
                     onSignupClick = { navController.navigate(Destinations.Signup) },
                     onForgotPasswordClick = { navController.navigate(Destinations.ForgotPassword) }
                 )
@@ -183,12 +197,18 @@ fun TioFlixNavHost() {
                             )
                         )
                     },
-                    onVerified = { navigateClearingAuth(Destinations.Home) }
+                    onVerified = { if (!recoveryState.isActive) navigateClearingAuth(Destinations.Home) }
                 )
             }
 
             composable(Destinations.ForgotPassword) {
                 ForgotPasswordRoute()
+            }
+
+            composable(Destinations.ResetPassword) {
+                ResetPasswordRoute(recoveryViewModel) { message ->
+                    navigateClearingAuth(Destinations.login(message = message))
+                }
             }
 
             composable(Destinations.Home) {
@@ -219,7 +239,7 @@ fun TioFlixNavHost() {
 
             composable(Destinations.Settings) {
                 SettingsRoute(
-                    onLoggedOut = { navigateClearingAuth(Destinations.Login) }
+                    onLoggedOut = { navigateClearingAuth(Destinations.login()) }
                 )
             }
 
