@@ -30,7 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
@@ -38,7 +40,9 @@ import com.tioflix.app.domain.model.ContentItem
 import com.tioflix.app.domain.model.ContentType
 import com.tioflix.app.domain.repository.FavoritesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -53,6 +57,7 @@ data class MyListUiState(
 )
 
 sealed interface MyListAction {
+    data object RefreshRequested : MyListAction
     data object RetryClicked : MyListAction
     data class ContentClicked(val contentId: String) : MyListAction
 }
@@ -71,38 +76,31 @@ class MyListViewModel @Inject constructor(
     private val _effects = Channel<MyListEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    init {
-        loadFavorites()
-    }
+    private var loadJob: Job? = null
 
     fun onAction(action: MyListAction) {
         when (action) {
-            MyListAction.RetryClicked -> loadFavorites()
+            MyListAction.RefreshRequested, MyListAction.RetryClicked -> loadFavorites()
             is MyListAction.ContentClicked -> viewModelScope.launch {
                 _effects.send(MyListEffect.NavigateContent(action.contentId))
             }
         }
     }
 
-    private fun loadFavorites() = viewModelScope.launch {
-        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        favoritesRepository.getFavorites()
-            .onSuccess { items ->
+    private fun loadFavorites() {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val result = favoritesRepository.getFavorites()
+            ensureActive() // Ignore responses from a load cancelled by a newer refresh.
+            result.onSuccess { items ->
+                _uiState.update { it.copy(isLoading = false, items = items) }
+            }.onFailure { error ->
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        items = items
-                    )
+                    it.copy(isLoading = false, errorMessage = error.message ?: "Unable to load your list.")
                 }
             }
-            .onFailure { error ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Unable to load your list."
-                    )
-                }
-            }
+        }
     }
 }
 
@@ -112,6 +110,11 @@ fun MyListRoute(
     viewModel: MyListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Destination lifecycle resumes when navigating back from Content Detail.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onAction(MyListAction.RefreshRequested)
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
