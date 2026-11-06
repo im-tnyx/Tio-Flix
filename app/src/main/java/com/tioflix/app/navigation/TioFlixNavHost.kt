@@ -17,7 +17,7 @@ import com.tioflix.app.ui.auth.reset.ResetPasswordViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavType
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -77,6 +77,16 @@ private val bottomDestinations = listOf(
     BottomDestination(Destinations.Settings, "Settings", Icons.Filled.Person)
 )
 
+// Auth transitions clear the old stack and leave Home as the first browsing entry.
+// The graph's declared start (Splash/ResetPassword) is no longer on that stack.
+internal fun NavHostController.navigateToBottomDestination(destination: String) {
+    navigate(destination) {
+        popUpTo(Destinations.Home) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
 @Composable
 fun TioFlixNavHost(recoveryViewModel: ResetPasswordViewModel) {
     if (!AppConfig.isSupabaseConfigured) {
@@ -100,16 +110,6 @@ fun TioFlixNavHost(recoveryViewModel: ResetPasswordViewModel) {
         }
     }
 
-    fun navigateToBottomDestination(destination: String) {
-        navController.navigate(destination) {
-            popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
-
     LaunchedEffect(recoveryState.isActive) {
         if (recoveryState.isActive) navigateClearingAuth(Destinations.ResetPassword)
     }
@@ -121,7 +121,7 @@ fun TioFlixNavHost(recoveryViewModel: ResetPasswordViewModel) {
                     bottomDestinations.forEach { destination ->
                         NavigationBarItem(
                             selected = currentRoute == destination.route,
-                            onClick = { navigateToBottomDestination(destination.route) },
+                            onClick = { navController.navigateToBottomDestination(destination.route) },
                             icon = {
                                 Icon(
                                     imageVector = destination.icon,
