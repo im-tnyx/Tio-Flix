@@ -43,12 +43,17 @@ class SupabaseWatchHistoryRepository @Inject constructor(
     private val postgrest: Postgrest
 ) : WatchHistoryRepository {
 
-    override suspend fun getProgress(contentId: String): Result<WatchProgress?> = runCatching {
+    override suspend fun getProgress(
+        contentId: String
+    ): Result<WatchProgress?> = runCatching {
         val userId = currentUserId()
+
         postgrest["watch_history"]
             .select {
-                eq("user_id", userId)
-                eq("content_id", contentId)
+                filter {
+                    eq("user_id", userId)
+                    eq("content_id", contentId)
+                }
                 limit(1)
             }
             .decodeList<WatchProgressRowDto>()
@@ -56,7 +61,9 @@ class SupabaseWatchHistoryRepository @Inject constructor(
             ?.toDomain()
     }
 
-    override suspend fun saveProgress(progress: WatchProgress): Result<Unit> = runCatching {
+    override suspend fun saveProgress(
+        progress: WatchProgress
+    ): Result<Unit> = runCatching {
         val dto = WatchProgressUpsertDto(
             userId = currentUserId(),
             contentId = progress.contentId,
@@ -65,15 +72,19 @@ class SupabaseWatchHistoryRepository @Inject constructor(
             durationMs = progress.durationMs.coerceAtLeast(0L),
             completed = progress.completed
         )
-        postgrest["watch_history"].insert(
-            value = dto,
-            upsert = true,
+
+        postgrest["watch_history"].upsert(dto) {
             onConflict = "user_id,content_id"
-        )
+        }
+
+        Unit
     }
 
-    override suspend fun getContinueWatching(limit: Int): Result<List<ContinueWatchingItem>> = runCatching {
+    override suspend fun getContinueWatching(
+        limit: Int
+    ): Result<List<ContinueWatchingItem>> = runCatching {
         val userId = currentUserId()
+
         postgrest["watch_history"]
             .select(
                 columns = Columns.raw(
@@ -102,29 +113,36 @@ class SupabaseWatchHistoryRepository @Inject constructor(
                     """.trimIndent()
                 )
             ) {
-                eq("user_id", userId)
-                eq("completed", false)
-                gt("position_ms", 0)
+                filter {
+                    eq("user_id", userId)
+                    eq("completed", false)
+                    gt("position_ms", 0)
+                }
                 order("last_watched_at", Order.DESCENDING)
                 limit(limit.coerceIn(1, 50).toLong())
             }
             .decodeList<WatchProgressRowDto>()
             .mapNotNull { row ->
                 val content = row.content ?: return@mapNotNull null
+
                 ContinueWatchingItem(
                     content = content.toDomain(),
                     episodeId = row.episodeId,
                     positionMs = row.positionMs,
                     durationMs = row.durationMs,
                     progressFraction = if (row.durationMs > 0L) {
-                        (row.positionMs.toFloat() / row.durationMs.toFloat()).coerceIn(0f, 1f)
-                    } else 0f
+                        (row.positionMs.toFloat() / row.durationMs.toFloat())
+                            .coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
                 )
             }
     }
 
-    private fun currentUserId(): String = auth.currentUserOrNull()?.id
-        ?: error("No authenticated user is available.")
+    private fun currentUserId(): String =
+        auth.currentUserOrNull()?.id
+            ?: error("No authenticated user is available.")
 
     private fun WatchProgressRowDto.toDomain() = WatchProgress(
         contentId = contentId,

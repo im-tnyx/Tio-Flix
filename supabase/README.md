@@ -59,6 +59,43 @@ Check migration status:
 supabase migration list
 ```
 
+## Cloud environment
+
+The repository includes a manual GitHub Actions workflow at
+`.github/workflows/supabase-cloud.yml`. It deploys the pending migrations,
+updates the `playback-session` function secrets, and deploys all Edge Functions
+to the Supabase project selected by the GitHub `production` Environment.
+
+Before running the workflow, create a protected GitHub Environment named
+`production` and add these encrypted Environment secrets:
+
+```text
+SUPABASE_ACCESS_TOKEN       Supabase Personal Access Token for CI
+SUPABASE_PROJECT_ID         Supabase project reference ID
+SUPABASE_DB_PASSWORD        Supabase database password
+PLAYBACK_CDN_BASE_URL       HTTPS CDN base URL for signed HLS playback
+PLAYBACK_SIGNING_SECRET     Long random secret used by the playback signer
+PLAYBACK_URL_TTL_SECONDS    Short URL lifetime, for example 300
+```
+
+The workflow is `workflow_dispatch` only and does not deploy on every push.
+Configure required reviewers on the GitHub Environment before using it for a
+production project. Do not put any of these values in Git, Android
+`local.properties`, or the workflow file.
+
+The Android cloud build still needs the public client configuration in
+`local.properties` (use `local.properties.example` as the template):
+
+```text
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
+GOOGLE_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+PLAYBACK_API_BASE_URL=https://YOUR_PROJECT_REF.functions.supabase.co
+```
+
+This repository change prepares the deployment path only. It does not create a
+Supabase project, set GitHub secrets, apply migrations, or deploy functions.
+
 ## Playback Edge Function
 
 The Android app calls:

@@ -25,7 +25,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,8 +66,7 @@ fun HomeScreen(state: HomeUiState, onAction: (HomeAction) -> Unit, modifier: Mod
                     item {
                         Header(
                             title = state.title,
-                            onSearch = { onAction(HomeAction.SearchClicked) },
-                            onLogout = { onAction(HomeAction.LogoutClicked) },
+                            subtitle = state.subtitle,
                             horizontalPadding = horizontalPadding
                         )
                     }
@@ -101,16 +99,15 @@ fun HomeScreen(state: HomeUiState, onAction: (HomeAction) -> Unit, modifier: Mod
 }
 
 @Composable
-private fun Header(title: String, onSearch: () -> Unit, onLogout: () -> Unit, horizontalPadding: Dp) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+private fun Header(title: String, subtitle: String, horizontalPadding: Dp) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.weight(1f))
-        OutlinedButton(onClick = onSearch) { Text("Search") }
-        Button(onClick = onLogout) { Text("Logout") }
+        Text(subtitle, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

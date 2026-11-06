@@ -54,6 +54,23 @@ Mobile app should support:
 
 ## Android TV requirements
 
+The manifest references `app/src/main/res/drawable/tv_banner.xml` as the default
+launcher banner. It contains outlined Tio-Flix lettering on the shared dark/red
+palette, with a 320 x 180 viewport (320 x 180 pixels at xhdpi). This supplies a
+launcher resource; it does not establish TV remote, playback, or release acceptance.
+
+Local validation on 2026-10-13 passed `:app:compileDebugKotlin`,
+`:app:testDebugUnitTest` (20 tests), `:app:assembleDebug`, and `:app:lintDebug`
+(0 errors, 59 warnings). Lint fixes also include a function-scoped Media3
+`UnstableApi` opt-in and a Glide 4.16.0 dependency constraint for IMA's legacy
+Glide dependency. No notification permission or lint suppression was added.
+The Android CI workflow now includes `:app:lintDebug`; hosted CI has not run
+for these local changes.
+
+The rebuilt APK passed Login, invalid recovery-link, and Back-to-Login smoke
+checks on `Pixel_9_API35`. A valid recovery email/password update, actual TV
+launcher rendering, TV remote behavior, and IMA ad playback remain unverified.
+
 Android TV app should support:
 
 - D-pad remote navigation

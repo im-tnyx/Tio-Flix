@@ -153,24 +153,29 @@ class SearchViewModel @Inject constructor(
 
 @Composable
 fun SearchRoute(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onContentClick: (String) -> Unit,
+    showBackButton: Boolean = true,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                SearchEffect.NavigateBack -> onBack()
+                SearchEffect.NavigateBack -> onBack?.invoke()
                 is SearchEffect.NavigateContent -> onContentClick(effect.contentId)
             }
         }
     }
-    SearchScreen(state, viewModel::onAction)
+    SearchScreen(state, viewModel::onAction, showBackButton = showBackButton)
 }
 
 @Composable
-fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
+fun SearchScreen(
+    state: SearchUiState,
+    onAction: (SearchAction) -> Unit,
+    showBackButton: Boolean
+) {
     Surface(Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= 720.dp
@@ -189,7 +194,9 @@ fun SearchScreen(state: SearchUiState, onAction: (SearchAction) -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(onClick = { onAction(SearchAction.BackClicked) }) { Text("Back") }
+                        if (showBackButton) {
+                            OutlinedButton(onClick = { onAction(SearchAction.BackClicked) }) { Text("Back") }
+                        }
                         OutlinedTextField(
                             value = state.query,
                             onValueChange = { onAction(SearchAction.QueryChanged(it)) },

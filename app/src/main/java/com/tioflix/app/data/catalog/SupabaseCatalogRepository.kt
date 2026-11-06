@@ -9,15 +9,10 @@ import com.tioflix.app.domain.model.SeriesSeason
 import com.tioflix.app.domain.repository.CatalogRepository
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
-
-@Serializable
-private data class SearchContentParams(
-    val search_text: String,
-    val result_limit: Int
-)
 
 @Singleton
 class SupabaseCatalogRepository @Inject constructor(
@@ -49,30 +44,56 @@ class SupabaseCatalogRepository @Inject constructor(
                     slug = category.slug,
                     name = category.name,
                     sortOrder = category.sortOrder,
-                    items = category.contentCategories.sortedBy { it.sortOrder }.map { it.content.toDomain() }
+                    items = category.contentCategories
+                        .sortedBy { it.sortOrder }
+                        .map { it.content.toDomain() }
                 )
             }
-        val featured = categories.asSequence().flatMap { it.items.asSequence() }.firstOrNull { it.isFeatured }
+
+        val featured = categories
+            .asSequence()
+            .flatMap { it.items.asSequence() }
+            .firstOrNull { it.isFeatured }
+
         HomeCatalog(featured = featured, categories = categories)
     }
 
     override suspend fun getContent(contentId: String): Result<ContentItem> = runCatching {
         postgrest["content"]
-            .select(columns = Columns.raw(CONTENT_COLUMNS)) { eq("id", contentId) }
+            .select(columns = Columns.raw(CONTENT_COLUMNS)) {
+                filter {
+                    eq("id", contentId)
+                }
+            }
             .decodeSingle<ContentDto>()
             .toDomain()
     }
 
-    override suspend fun searchContent(query: String, limit: Int): Result<List<ContentItem>> = runCatching {
+    override suspend fun searchContent(
+        query: String,
+        limit: Int
+    ): Result<List<ContentItem>> = runCatching {
         val normalized = query.trim()
-        if (normalized.length < 2) return@runCatching emptyList()
+        if (normalized.length < 2) {
+            return@runCatching emptyList()
+        }
+
+        val parameters = buildJsonObject {
+            put("search_text", normalized)
+            put("result_limit", limit.coerceIn(1, 50))
+        }
+
         postgrest.rpc(
             function = "search_content",
-            parameters = SearchContentParams(normalized, limit.coerceIn(1, 50))
-        ).decodeList<ContentDto>().map { it.toDomain() }
+            parameters = parameters
+        )
+            .decodeList<ContentDto>()
+            .map { it.toDomain() }
     }
 
-    override suspend fun getSeriesSeasons(contentId: String): Result<List<SeriesSeason>> = runCatching {
+    override suspend fun getSeriesSeasons(
+        contentId: String
+    ): Result<List<SeriesSeason>> = runCatching {
         postgrest["series_seasons"]
             .select(
                 columns = Columns.raw(
@@ -84,7 +105,11 @@ class SupabaseCatalogRepository @Inject constructor(
                     )
                     """.trimIndent()
                 )
-            ) { eq("content_id", contentId) }
+            ) {
+                filter {
+                    eq("content_id", contentId)
+                }
+            }
             .decodeList<SeriesSeasonDto>()
             .sortedBy { it.seasonNumber }
             .map { season ->
@@ -95,17 +120,19 @@ class SupabaseCatalogRepository @Inject constructor(
                     title = season.title,
                     description = season.description,
                     posterUrl = season.posterUrl,
-                    episodes = season.episodes.sortedBy { it.episodeNumber }.map { episode ->
-                        SeriesEpisode(
-                            id = episode.id,
-                            seasonId = episode.seasonId,
-                            episodeNumber = episode.episodeNumber,
-                            title = episode.title,
-                            description = episode.description,
-                            thumbnailUrl = episode.thumbnailUrl,
-                            durationMinutes = episode.durationMinutes
-                        )
-                    }
+                    episodes = season.episodes
+                        .sortedBy { it.episodeNumber }
+                        .map { episode ->
+                            SeriesEpisode(
+                                id = episode.id,
+                                seasonId = episode.seasonId,
+                                episodeNumber = episode.episodeNumber,
+                                title = episode.title,
+                                description = episode.description,
+                                thumbnailUrl = episode.thumbnailUrl,
+                                durationMinutes = episode.durationMinutes
+                            )
+                        }
                 )
             }
     }
@@ -126,6 +153,8 @@ class SupabaseCatalogRepository @Inject constructor(
     )
 
     private companion object {
-        const val CONTENT_COLUMNS = "id,content_type,title,description,poster_url,backdrop_url,release_year,duration_minutes,total_seasons,maturity_rating,language,is_featured"
+        const val CONTENT_COLUMNS =
+            "id,content_type,title,description,poster_url,backdrop_url,release_year," +
+                "duration_minutes,total_seasons,maturity_rating,language,is_featured"
     }
 }

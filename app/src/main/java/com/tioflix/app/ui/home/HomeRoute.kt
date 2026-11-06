@@ -7,8 +7,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun HomeRoute(
-    onLoggedOut: () -> Unit,
-    onSearchClick: () -> Unit,
     onContentClick: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -17,8 +15,6 @@ fun HomeRoute(
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                HomeEffect.NavigateLogin -> onLoggedOut()
-                HomeEffect.NavigateSearch -> onSearchClick()
                 is HomeEffect.NavigateContentDetail -> onContentClick(effect.contentId)
             }
         }
